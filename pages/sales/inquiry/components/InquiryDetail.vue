@@ -206,9 +206,20 @@
             :width="isMobile ? 200 : 0"
           >
             <template #default="scope">
-              <el-text line-clamp="2" :size="isMobile ? 'small' : 'default'">{{
-                scope.row.catalogue_name
-              }}</el-text>
+              <NuxtLink
+                :href="`/catalogue/${scope.row.catalogue_id}`"
+                :target="'_blank'"
+                ><el-text
+                  class="text-blue-600"
+                  line-clamp="2"
+                  :size="isMobile ? 'small' : 'default'"
+                  >{{
+                    scope.row.catalogue
+                      ? displayCatalogueName(scope.row.catalogue)
+                      : scope.row.catalogue_name
+                  }}</el-text
+                ></NuxtLink
+              >
             </template>
           </el-table-column>
           <el-table-column prop="request_qty" label="QTY" align="center" />
@@ -374,6 +385,7 @@ import type { AddressType } from "~/types/address";
 import { formatLocalDate } from "#imports";
 import ItemImageUpload from "./ItemImageUpload.vue";
 import { getFirstFileUrl } from "#imports";
+import { displayCatalogueName } from "#imports";
 const { isMobile } = useDevice();
 
 const config = useRuntimeConfig();

@@ -3,18 +3,23 @@
     <el-page-header @back="goBack">
       <template #content>
         <span class="text-large font-600 mr-3">
-          Detail - {{ catalogueData?.unique_code || catalogueData?.name }}
+          Detail -
+          {{
+            catalogueData?.data?.value?.data?.unique_code ||
+            catalogueData?.data?.value?.data?.name ||
+            ""
+          }}
         </span>
       </template>
     </el-page-header>
 
-    <el-card class="my-3">
+    <el-card class="my-3" v-if="catalogueData.status.value != 'pending'">
       <template #header>
         <div class="flex justify-end">
           <NuxtLink
             :disabled="loading"
             :loading="loading"
-            :to="`/catalogue/add?unique_id=${catalogueData?.unique_id}`"
+            :to="`/catalogue/add?unique_id=${catalogueData?.data?.value?.data?.unique_id}`"
             class="el-button el-button--warning"
           >
             <el-icon class="me-2"><Edit /></el-icon> Edit
@@ -25,7 +30,7 @@
             :disabled="loading"
             :loading="loading"
             :icon="Delete"
-            @click="() => onDelete([catalogueData!.unique_id!])"
+            @click="() => onDelete([catalogueData?.data?.value?.data?.unique_id!])"
             >Hapus</el-button
           >
         </div>
@@ -34,16 +39,16 @@
         <div class="flex-1">
           <el-descriptions title="" :column="1" size="small" border>
             <el-descriptions-item label="Nama Item">{{
-              catalogueData?.name
+              catalogueData?.data?.value?.data?.name
             }}</el-descriptions-item>
             <el-descriptions-item label="Brand">{{
-              catalogueData?.brand?.name || "-"
+              catalogueData?.data?.value?.data?.brand?.name || "-"
             }}</el-descriptions-item>
             <el-descriptions-item label="Tahun">{{
-              catalogueData?.year || "-"
+              catalogueData?.data?.value?.data?.year || "-"
             }}</el-descriptions-item>
             <el-descriptions-item label="Jenis Item">{{
-              catalogueData?.is_asset ? "Asset" : "Non-Asset"
+              catalogueData?.data?.value?.data?.is_asset ? "Asset" : "Non-Asset"
             }}</el-descriptions-item>
           </el-descriptions>
         </div>
@@ -51,16 +56,18 @@
         <div class="flex-1">
           <el-descriptions title="" :column="1" size="small" border>
             <el-descriptions-item label="Serial Number">{{
-              catalogueData?.sn || "-"
+              catalogueData?.data?.value?.data?.sn || "-"
             }}</el-descriptions-item>
             <el-descriptions-item label="Dibuat Pada">{{
-              formatLocalDate(catalogueData?.created_at ?? 0)
+              formatLocalDate(catalogueData?.data?.value?.data?.created_at ?? 0)
             }}</el-descriptions-item>
             <el-descriptions-item label="Terakhir Diupdate">{{
-              formatLocalDate(catalogueData?.updated_at ?? 0)
+              formatLocalDate(catalogueData?.data?.value?.data?.updated_at ?? 0)
             }}</el-descriptions-item>
-            <el-descriptions-item label="Versi">{{
-              catalogueData?.version || "1"
+            <el-descriptions-item label="Bundle">{{
+              catalogueData?.data?.value?.data?.is_bundle
+                ? "Bundle"
+                : "Non Bundle"
             }}</el-descriptions-item>
           </el-descriptions>
         </div>
@@ -68,23 +75,36 @@
 
       <div class="mb-5">
         <h1 class="text-lg font-bold">Deskripsi</h1>
-        <p>{{ catalogueData?.description || "Tidak ada deskripsi" }}</p>
+        <p>
+          {{
+            catalogueData?.data?.value?.data?.description ||
+            "Tidak ada deskripsi"
+          }}
+        </p>
       </div>
 
       <div class="mb-5">
         <h1 class="text-lg font-bold">Dimensi</h1>
         <el-descriptions :column="2" border size="small">
           <el-descriptions-item label="Panjang">{{
-            catalogueData?.length ? `${catalogueData.length} cm` : "-"
+            catalogueData?.data?.value?.data?.length
+              ? `${catalogueData.data?.value?.data?.length} cm`
+              : "-"
           }}</el-descriptions-item>
           <el-descriptions-item label="Lebar">{{
-            catalogueData?.width ? `${catalogueData.width} cm` : "-"
+            catalogueData?.data?.value?.data?.width
+              ? `${catalogueData.data?.value?.data?.width} cm`
+              : "-"
           }}</el-descriptions-item>
           <el-descriptions-item label="Tinggi">{{
-            catalogueData?.height ? `${catalogueData.height} cm` : "-"
+            catalogueData?.data?.value?.data?.height
+              ? `${catalogueData.data?.value?.data?.height} cm`
+              : "-"
           }}</el-descriptions-item>
           <el-descriptions-item label="Berat">{{
-            catalogueData?.berat ? `${catalogueData.berat} gram` : "-"
+            catalogueData?.data?.value?.data?.berat
+              ? `${catalogueData.data?.value?.data?.berat} gram`
+              : "-"
           }}</el-descriptions-item>
         </el-descriptions>
       </div>
@@ -93,7 +113,8 @@
         <h1 class="text-lg font-bold">Lampiran</h1>
         <div class="flex flex-wrap gap-4">
           <el-image
-            v-for="(file, index) in catalogueData?.file_catalogues"
+            v-for="(file, index) in catalogueData?.data?.value?.data
+              ?.file_catalogues"
             :key="index"
             :src="file.url"
             :preview-src-list="previewImageList"
@@ -113,22 +134,23 @@
       </div>
     </el-card>
 
-    <el-card class="mt-3">
+    <el-card class="mt-3" v-if="inventoryData?.status?.value != 'pending'">
       <h1 class="mb-4">Informasi Inventory</h1>
 
       <CustomTable
         :column-sort="onSort"
         :columns="filteredColumn"
-        :data="inventoryData?.data ?? []"
+        :data="inventoryData?.data.value?.data ?? []"
       />
       <div class="flex justify-end mt-3">
         <el-pagination
           background
-          layout="prev, pager, next"
-          :total="inventoryData?.total_data"
-          @next-click="paginationClick"
-          @prev-click="paginationClick"
-          @change="paginationClick"
+          :layout="`prev, pager, next, ${isMobile ? '' : 'sizes, total'}`"
+          :total="inventoryData?.data.value?.total_data"
+          @current-change="handlePageChangeInventory"
+          @size-change="handleSizeChangeInventory"
+          :page-count="inventoryData?.data.value?.total_page"
+          size="small"
         />
       </div>
     </el-card>
@@ -167,6 +189,34 @@
           @change="paginationClick"
         />
       </div> -->
+    </el-card>
+    <el-card class="mt-3" v-if="bundle_items?.status?.value != 'pending'">
+      <template #header>
+        <div class="card-header flex justify-between items-center">
+          <h1>Daftar Item Bundle</h1>
+          <el-button type="primary" @click="openBundleModal"
+            >Tambah Item Bundle</el-button
+          >
+        </div>
+      </template>
+
+      <CustomTable
+        :columns="bundleColumns"
+        :data="bundle_items?.data.value?.data ?? []"
+        :loading="removingBundleId !== null"
+      />
+      <div class="flex justify-end mt-3">
+        <el-pagination
+          background
+          :layout="`prev, pager, next, ${isMobile ? '' : 'sizes, total'}`"
+          :total="bundle_items?.data.value?.total_data ?? 0"
+          :page-size="parseInt(bundle_request_search.limit)"
+          :current-page="parseInt(bundle_request_search.offset)"
+          @current-change="handlePageChangeBundle"
+          @size-change="handleSizeChangeBundle"
+          size="small"
+        />
+      </div>
     </el-card>
     <el-card class="mt-3">
       <template #header>
@@ -214,6 +264,7 @@
           :total="pricetag_item?.data.value?.total_data"
           @current-change="handlePageChangeOffer"
           @size-change="handleSizeChangeOffer"
+          :page-count="pricetag_item?.data.value?.total_page"
           size="small"
         />
       </div>
@@ -308,6 +359,27 @@
         </div>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="showBundleModal" title="Pilih Item Bundle" width="70%">
+      <CatalogueSelect
+        type="item"
+        searchable
+        :exclude-ids="bundleExcludeIds"
+        @selection-change="(rows: Catalogue[]) => (selectedBundleCandidates = rows)"
+      />
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showBundleModal = false">Batal</el-button>
+          <el-button
+            type="primary"
+            :loading="submittingBundle"
+            @click="onSubmitBundleItems"
+          >
+            Simpan
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </TrumsWrapper>
 </template>
 
@@ -317,6 +389,7 @@ import {
   Download,
   Document,
   Filter,
+  PictureFilled,
   SetUp,
   Plus,
 } from "@element-plus/icons-vue";
@@ -324,6 +397,7 @@ import {
   ElButton,
   ElCheckbox,
   ElIcon,
+  ElImage,
   ElPopover,
   ElTag,
   ElTree,
@@ -355,6 +429,7 @@ import type {
 import type { ColumnTable } from "~/types/ColumnTable";
 import type { Pricetag_item } from "~/types/pricetag";
 import { currencyWithoutSymbol } from "#imports";
+import CatalogueSelect from "~/components/trums/CatalogueSelect.vue";
 
 const { isMobile } = useDevice();
 
@@ -375,14 +450,209 @@ const popoverRef = ref();
 const loading = ref(false);
 const loadingSubtitution = ref<boolean>(false);
 const loadingInventory = ref(false);
-const catalogueData = ref<Catalogue | null>(null);
-const inventoryData = ref<ResponsePagination<Inventory[]>>({
-  current_page: 0,
-  data: [],
-  success: true,
-  total_data: 0,
-  total_page: 0,
+const catalogueData = await useAsyncData("catalogue-detail", async () => {
+  const res = await useFetchApi<BaseResponse<Catalogue>>(
+    `/catalogues-read/${route.params.id}`,
+    "catalogue-detail",
+    "get",
+    null
+  );
+  return res.data.value;
 });
+
+const requestSearch = ref<RequestSearch>({
+  column: [
+    {
+      catalogue_id: [route.params.id],
+      location_id: [],
+    },
+  ],
+  keyword: "",
+  table: "inventories",
+  sort: {
+    column: "created_at",
+    order: OrderColumn.DESC,
+  },
+  offset: "1",
+  limit: "10",
+});
+
+const inventoryData = await useAsyncData("search-inventory", async () => {
+  const res = await useFetchApi<ResponsePagination<Inventory[]>>(
+    `/search`,
+    "search-inventory",
+    "post",
+    requestSearch.value
+  );
+  return res.data.value;
+});
+
+const bundle_request_search = ref<RequestSearch>({
+  keyword: "",
+  table: "catalogues",
+  column: [
+    {
+      parent_id: [route.params.id],
+    },
+  ],
+  sort: {
+    column: "created_at",
+    order: OrderColumn.DESC,
+  },
+  offset: "1",
+  limit: "10",
+});
+
+const bundle_items = await useAsyncData("bundle-items", async () => {
+  const res = await useFetchApi<ResponsePagination<Catalogue[]>>(
+    `/search`,
+    "bundle-items",
+    "post",
+    bundle_request_search.value
+  );
+  return res.data.value;
+});
+
+watch(
+  () => bundle_request_search.value,
+  () => bundle_items.refresh(),
+  { deep: true }
+);
+
+const handlePageChangeBundle = (val: number) => {
+  bundle_request_search.value.offset = val.toString();
+};
+const handleSizeChangeBundle = (val: number) => {
+  bundle_request_search.value.limit = val.toString();
+  bundle_request_search.value.offset = "1";
+};
+
+const showBundleModal = ref<boolean>(false);
+const submittingBundle = ref<boolean>(false);
+const removingBundleId = ref<string | null>(null);
+const selectedBundleCandidates = ref<Catalogue[]>([]);
+
+const openBundleModal = () => {
+  selectedBundleCandidates.value = [];
+  showBundleModal.value = true;
+};
+
+const bundleChildIds = computed<string[]>(() =>
+  (bundle_items.data.value?.data ?? []).map((row) => row.unique_id ?? "")
+);
+
+const bundleExcludeIds = computed<string[]>(() => {
+  const parentId = catalogueData.data.value?.data?.unique_id;
+  return parentId ? [parentId, ...bundleChildIds.value] : bundleChildIds.value;
+});
+
+const buildBundlePayload = (row: Catalogue, parentId: string) => {
+  const formData = new FormData();
+  formData.append("unique_id", row.unique_id ?? "");
+  formData.append("name", row.name ?? "");
+  formData.append("type", row.type ?? "item");
+  formData.append("sn", row.sn ?? "");
+  formData.append("year", row.year ?? "");
+  formData.append("brand_name", row.brand_name || row.brand?.name || "");
+  if (row.brand_id) {
+    formData.append("brand_id", row.brand_id);
+  }
+  formData.append("is_asset", `${row.is_asset ?? false}`);
+  formData.append("parent_id", parentId);
+  return formData;
+};
+
+const onSubmitBundleItems = async () => {
+  const parentId = catalogueData.data.value?.data?.unique_id;
+  if (!parentId) {
+    ElMessage.error("Data catalogue induk belum termuat");
+    return;
+  }
+
+  const candidates = selectedBundleCandidates.value.filter(
+    (row) =>
+      row.unique_id &&
+      row.unique_id !== parentId &&
+      !bundleChildIds.value.includes(row.unique_id)
+  );
+
+  if (candidates.length === 0) {
+    ElMessage.warning("Pilih minimal satu item");
+    return;
+  }
+
+  submittingBundle.value = true;
+  let successCount = 0;
+  let failedCount = 0;
+
+  for (const row of candidates) {
+    const response = await useFetchApi<BaseResponse<any>>(
+      "/catalogues-create",
+      "bundle-item-attach",
+      "post",
+      buildBundlePayload(row, parentId)
+    );
+    if (response.status.value === "success") {
+      successCount++;
+    } else {
+      failedCount++;
+    }
+  }
+
+  submittingBundle.value = false;
+
+  if (successCount > 0) {
+    ElMessage.success(`${successCount} item ditambahkan ke bundle`);
+  }
+  if (failedCount > 0) {
+    ElMessage.error(`${failedCount} item gagal ditambahkan ke bundle`);
+  }
+  if (successCount > 0) {
+    showBundleModal.value = false;
+    selectedBundleCandidates.value = [];
+    bundle_items.refresh();
+  }
+};
+
+const removeBundleItem = async (row: Catalogue) => {
+  if (!row.unique_id) return;
+
+  try {
+    await ElMessageBox.confirm(
+      `Lepas "${row.name ?? "item"}" dari bundle ini?`,
+      "Konfirmasi",
+      {
+        confirmButtonText: "Ya, Lepas",
+        cancelButtonText: "Batal",
+        type: "warning",
+      }
+    );
+  } catch {
+    return; // user canceled
+  }
+
+  const parentId = catalogueData.data.value?.data?.unique_id;
+  if (!parentId) {
+    ElMessage.error("Data catalogue induk belum termuat");
+    return;
+  }
+
+  removingBundleId.value = row.unique_id;
+  const response = await useFetchApi<BaseResponse<any>>(
+    "/catalogues-create",
+    "bundle-item-detach",
+    "post",
+    buildBundlePayload(row, "")
+  );
+  removingBundleId.value = null;
+
+  if (response.status.value === "success") {
+    ElMessage.success("Item berhasil dilepas dari bundle");
+    bundle_items.refresh();
+  } else {
+    ElMessage.error("Gagal melepas item dari bundle");
+  }
+};
 
 const defaultProps = {
   children: "children",
@@ -578,23 +848,6 @@ const column_selected = ref<string[]>([
   "is_traceable",
   "setup",
 ]);
-
-const requestSearch = ref<RequestSearch>({
-  column: [
-    {
-      catalogue_id: [],
-      location_id: [],
-    },
-  ],
-  keyword: "",
-  table: "inventories",
-  sort: {
-    column: "created_at",
-    order: OrderColumn.DESC,
-  },
-  offset: "1",
-  limit: "10",
-});
 
 const availableColumn: ColumnTable<Inventory>[] = [
   {
@@ -816,9 +1069,9 @@ availableColumn.unshift({
   },
 
   headerCellRenderer: () => {
-    const _data = unref(inventoryData);
+    const _data = unref(inventoryData.data);
     const onChange = (value: CheckboxValueType) =>
-      (inventoryData.value = {
+      (inventoryData.data.value = {
         success: true,
         current_page: _data?.current_page ?? 0,
         total_data: _data?.total_data ?? 0,
@@ -908,6 +1161,88 @@ const filteredColumn = computed(() => {
   );
 });
 
+const bundleColumns: ColumnTable<Catalogue>[] = [
+  {
+    key: "image",
+    title: "Gambar",
+    width: 100,
+    align: "center",
+    cellRenderer: ({ rowData }: { rowData: Catalogue }) => {
+      const image = getFirstFileUrl(rowData.files ?? []);
+      return (
+        <div class="flex items-center justify-center">
+          {image ? (
+            <ElImage
+              src={image}
+              fit="cover"
+              style={{ width: "35px", height: "35px" }}
+            />
+          ) : (
+            <div
+              class="flex items-center justify-center border rounded"
+              style={{ width: "35px", height: "35px", fontSize: "10px" }}
+            >
+              <ElIcon>
+                <PictureFilled />
+              </ElIcon>
+            </div>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    key: "unique_code",
+    title: "Kode",
+    width: 150,
+    cellRenderer: ({ rowData }: { rowData: Catalogue }) => (
+      <NuxtLink
+        href={`/catalogue/${rowData.unique_id}`}
+        class={"text-blue-600"}
+      >
+        {rowData.unique_code}
+      </NuxtLink>
+    ),
+  },
+  {
+    dataKey: "name",
+    key: "name",
+    title: "Nama",
+    sortable: true,
+  },
+  {
+    dataKey: "sn",
+    key: "sn",
+    title: "SN",
+    width: 200,
+  },
+  {
+    key: "brand_name",
+    title: "Brand",
+    width: 150,
+    cellRenderer: ({ rowData }: { rowData: Catalogue }) => (
+      <p>{rowData.brand?.name ?? "N/A"}</p>
+    ),
+  },
+  {
+    key: "actions",
+    title: "Aksi",
+    width: 100,
+    align: "center",
+    cellRenderer: ({ rowData }: { rowData: Catalogue }) => (
+      <ElButton
+        size="small"
+        type="danger"
+        plain
+        loading={removingBundleId.value === rowData.unique_id}
+        onClick={() => removeBundleItem(rowData)}
+      >
+        Lepas
+      </ElButton>
+    ),
+  },
+];
+
 const openSubstitutionModal = async (): Promise<void> => {
   showSubstitutionModal.value = true;
 };
@@ -965,10 +1300,10 @@ const onAddNewSubstitution = (catalogueId: string): void => {
       element.substitutions.push({
         catalogues: [
           {
-            brand_name: catalogueData.value?.brand?.name ?? "",
-            catalogue_id: catalogueData.value?.unique_id ?? "",
-            catalogue_name: catalogueData.value?.name ?? "",
-            sn: catalogueData.value?.sn ?? "",
+            brand_name: catalogueData.data.value?.data?.brand?.name ?? "",
+            catalogue_id: catalogueData.data.value?.data?.unique_id ?? "",
+            catalogue_name: catalogueData.data.value?.data?.name ?? "",
+            sn: catalogueData.data.value?.data?.sn ?? "",
           },
         ],
         unique_id: `${Number(index) + 1}`,
@@ -984,9 +1319,9 @@ const onAddNewSubstitution = (catalogueId: string): void => {
 
 const onSubmitSubstitution = async () => {
   try {
-    if (!catalogueData.value?.unique_id) return;
+    if (!catalogueData.data.value?.data?.unique_id) return;
 
-    const catalogueId = catalogueData.value.unique_id;
+    const catalogueId = catalogueData.data.value?.data?.unique_id;
 
     const newSubstitutionName = newSubstitutionByCatalogue.value[catalogueId];
 
@@ -1058,10 +1393,11 @@ const onSubmitSubstitution = async () => {
   }
 };
 
-const paginationClick = (val: number) => {
-  const data: RequestSearch = { ...requestSearch.value };
-  data.offset = val.toString();
-  requestSearch.value = data;
+const handlePageChangeInventory = (val: number) => {
+  requestSearch.value.offset = val.toString();
+};
+const handleSizeChangeInventory = (val: number) => {
+  requestSearch.value.limit = val.toString();
 };
 
 const fetchUnits = async () => {
@@ -1130,66 +1466,17 @@ const formatCurrency = (value: number) => {
 // List gambar untuk preview
 const previewImageList = computed(() => {
   return (
-    catalogueData.value?.file_catalogues
+    catalogueData.data.value?.data?.file_catalogues
       ?.filter((file) => file.type === "image")
       ?.map((file) => file.url) || []
   );
 });
 
-// Fetch data catalogue
-const fetchCatalogueDetail = async () => {
-  loading.value = true;
-  try {
-    const { data } = await useFetchApi<BaseResponse<Catalogue>>(
-      `/catalogues-read/${route.params.id}`,
-      "catalogue-detail",
-      "get",
-      null
-    );
-
-    if (data.value?.data) {
-      catalogueData.value = data.value.data;
-    }
-  } catch (error) {
-    console.error("Failed to fetch catalogue detail:", error);
-  } finally {
-    loading.value = false;
-  }
-};
-
-// Fetch data inventory terkait
-const fetchInventoryData = async () => {
-  if (!catalogueData.value?.unique_id) return;
-
-  loadingInventory.value = true;
-  try {
-    const request_search = { ...requestSearch.value };
-    request_search.column = [
-      {
-        catalogue_id: [catalogueData.value.unique_id],
-        location_id: [],
-      },
-    ];
-
-    const response = await useFetchApi<ResponsePagination<Inventory[]>>(
-      `/search`,
-      "catalogue-inventories",
-      "post",
-      request_search
-    );
-
-    console.log("fetch inventory", response.status.value);
-    if (response.status.value === "success") {
-      inventoryData.value = response.data.value!;
-    }
-  } catch (error) {
-    console.error("Failed to fetch inventory data:", error);
-  } finally {
-    loadingInventory.value = false;
-  }
-};
-
-watch(requestSearch, fetchInventoryData, { immediate: true });
+watch(
+  () => requestSearch,
+  () => inventoryData.refresh(),
+  { deep: true }
+);
 
 const findExistingSubtitution = async () => {
   loadingSubtitution.value = true;
@@ -1232,10 +1519,8 @@ const findExistingSubtitution = async () => {
 };
 
 onMounted(async () => {
-  await fetchCatalogueDetail();
   await fetchLocation();
   await fetchUnits();
-  await fetchInventoryData();
   await findExistingSubtitution();
 });
 </script>

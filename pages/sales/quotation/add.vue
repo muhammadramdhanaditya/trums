@@ -395,7 +395,8 @@
                           <p class="font-bold">Harga: {{ item.price }}</p>
                         </div>
                         <p>
-                          PN/SN: {{ item.catalogue?.sn ?? "Tidak Ada" }} |
+                          Brand:
+                          {{ item.catalogue?.brand?.name ?? "Tidak Ada" }} |
                           Vendor:
                           {{ item.pricetag?.owner?.name ?? "Tidak Ada" }}
                         </p>

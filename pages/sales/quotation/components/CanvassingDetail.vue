@@ -620,7 +620,7 @@
             :fixed="isMobile ? false : 'left'"
           >
             <template #default="{ row }">
-              {{ row.catalogue_name }}
+              {{ displayCatalogueName(row.catalogue) }}
             </template>
           </el-table-column>
 

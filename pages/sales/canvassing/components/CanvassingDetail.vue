@@ -231,9 +231,17 @@
                 class="text-blue-600 cursor-pointer"
                 @click="() => detailCanvassingVendor(row)"
               >
-                {{ row.catalogue_name }}
+                {{
+                  row.catalogue
+                    ? displayCatalogueName(row.catalogue)
+                    : row.catalogue_name
+                }}
               </span>
-              <span v-else>{{ row.catalogue_name }}</span>
+              <span v-else>{{
+                row.catalogue
+                  ? displayCatalogueName(row.catalogue)
+                  : row.catalogue_name
+              }}</span>
             </template>
           </el-table-column>
           <el-table-column label="Image" width="75">
@@ -421,6 +429,7 @@ import type { ItemSearch } from "~/types/item_search";
 import type { Catalogue } from "~/types/catalogue";
 import CatalogueAdd from "~/components/trums/CatalogueAdd.vue";
 import { TrumsCustomLinkButton } from "#components";
+import { displayCatalogueName } from "#imports";
 
 const config = useRuntimeConfig();
 const imageUrl = config.public.baseImageURL;
@@ -2166,7 +2175,9 @@ const initialCanvassing = (data: Canvassing) => {
         offer_item_version: 0,
         catalogue_id: element.catalogue_id ?? "",
         parent_catalogue_id: "",
-        catalogue_name: element.catalogue_name ?? "",
+        catalogue_name: element.catalogue
+          ? displayCatalogueName(element.catalogue)
+          : element.catalogue_name ?? "",
         sn: element.catalogue?.sn ?? "N/A",
         quantity: element.quantity ?? 1,
         unit_price: 0,
@@ -2197,7 +2208,9 @@ const initialCanvassing = (data: Canvassing) => {
           offer_item_version: 0,
           catalogue_id: child.catalogue_id ?? "",
           parent_catalogue_id: child.catalogue_id,
-          catalogue_name: child.catalogue?.name ?? "",
+          catalogue_name: child.catalogue
+            ? displayCatalogueName(child.catalogue)
+            : child.catalogue_name,
           sn: child.catalogue?.sn ?? "",
           quantity: child.quantity,
           unit_price: child.unit_price,

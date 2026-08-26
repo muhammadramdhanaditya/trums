@@ -757,11 +757,15 @@ watch(
     let no = 1;
 
     (data ?? []).forEach((item) => {
-      // console.log("reference", item);
+      console.log("views exist", pricetag_item_views.value);
+      console.log("reference", item);
       if (item.data_reference) {
         const isExist = pricetag_item_views.value.findIndex(
           (find) => find.unique_id == item.reference_id
         );
+
+        console.log("is exist", isExist);
+
         if (isExist < 0) {
           pricetag_item_views.value.push({
             no: `${no}`,
@@ -820,10 +824,17 @@ watch(
           const findCatalogueExist = pricetag_item_views.value.findIndex(
             (find) => find.item_id == item.catalogue_id
           );
+          console.log(
+            "catalogue id",
+            pricetag_item_views.value[findCatalogueExist].item_id
+          );
+
+          console.log("catalogue id", item.catalogue_id);
           if (
             findCatalogueExist >= 0 &&
             pricetag_item_views.value[findCatalogueExist].reference_id ==
-              item.reference_id
+              item.reference_id &&
+            pricetag_item_views.value[findCatalogueExist].hasChild == false
           ) {
             // if (pricetag_item_views.value[findCatalogueExist].hasChild) {
             //   const data = {
@@ -854,6 +865,10 @@ watch(
             //   pricetag_item_views.value.splice(isExist + 1, 0, data);
             // } else {
             // }
+            console.log(
+              "catalogue name",
+              pricetag_item_views.value[findCatalogueExist].item_name
+            );
             pricetag_item_views.value[findCatalogueExist].qty += item.quantity;
           } else {
             const data = {

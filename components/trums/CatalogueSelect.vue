@@ -1,8 +1,15 @@
 <template>
+  <div v-if="searchable" class="mb-3">
+    <el-input
+      v-model="request_search.keyword"
+      placeholder="Cari katalog..."
+      clearable
+    />
+  </div>
   <TrumsDragScrollTable>
     <customTable
       :columns="type == 'document' ? availableColumnDocument : availableColumn"
-      :data="data?.data ?? []"
+      :data="filteredRows"
       :loading="status === 'pending'"
       @sort-change="onSort"
     />
@@ -42,6 +49,8 @@ import { getDocRefLink, getDocRefView } from "~/types/document";
 
 const props = defineProps<{
   type: "place" | "item" | "document";
+  searchable?: boolean;
+  excludeIds?: string[];
 }>();
 const emit = defineEmits<{
   (e: "selection-change", value: Catalogue[]): void;
@@ -374,11 +383,15 @@ const onSort = (sortBy: { order: string; prop: string }) => {
   };
 };
 
+const filteredRows = computed<Catalogue[]>(() => {
+  const rows = data.value?.data ?? [];
+  if (!props.excludeIds?.length) return rows;
+  const excluded = new Set(props.excludeIds);
+  return rows.filter((row) => !excluded.has(row.unique_id ?? ""));
+});
+
 const emitSelection = () => {
-  emit(
-    "selection-change",
-    (data.value?.data ?? []).filter((item) => item.checked)
-  );
+  emit("selection-change", filteredRows.value.filter((item) => item.checked));
 };
 
 watch(
