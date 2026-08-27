@@ -3427,7 +3427,9 @@ const saveSelectedItemFromRAB = () => {
             unit_name: element.unit_name,
             unit_version: element.unit_version,
             fileUploads: [],
-            item_name: displayCatalogueName(element.catalogue!),
+            item_name: element.catalogue
+              ? displayCatalogueName(element.catalogue!)
+              : element.catalogue_name || "",
             reference_id: item.unique_id,
             reference: ReferencePriceTag.CANVASSING_ITEM,
             is_new: true,

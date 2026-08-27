@@ -1597,10 +1597,12 @@ const openModalPr = (index: number) => {
     {
       status: [ItemRequestTrailStatus.DONE],
       reference: ["pr"],
-      item_request: {
-        catalogue_id: [ruleForm.items[index].catalogue_id],
-      },
     },
+    // {
+    //   item_request: {
+    //     catalogue_id: [ruleForm.items[index].catalogue_id],
+    //   },
+    // },
   ];
   poItemIndex.value = index;
   visibleModalRequest.value = true;
