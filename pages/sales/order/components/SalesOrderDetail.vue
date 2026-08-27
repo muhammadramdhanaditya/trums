@@ -959,33 +959,78 @@ watch(
       let childs: PurchasOrderViewTree[] = [];
       if (canAccess("purchase-order-approve", props.privillage || [], 1)) {
         console.log("pricetag item", element.pricetag_item?.data_reference);
-        childs =
-          element.pricetag_item?.data_reference == undefined
-            ? []
-            : (
-                (element.pricetag_item?.data_reference as CanvassingItem)
-                  .canvassing_vendor ?? []
-              )
-                .filter(
-                  (vendor) => vendor.catalogue_id === element.catalogue_id
-                )
-                .map((vendor) => ({
-                  unique_id: vendor.unique_id || "",
-                  item_name: vendor.vendor?.name || "N/A",
-                  item_id: vendor.catalogue_id || "",
-                  quantity: vendor.quantity || 0,
-                  unit_name: vendor.unit_name || "N/A",
-                  harga_quo: vendor.selling_price || 0,
-                  harga_po: 0,
-                  total: vendor.selling_price! * vendor.quantity,
-                  quo_number: "",
-                  canvassing_code:
-                    vendor.canvassing_item?.canvassing?.unique_code ?? "",
-                  canvassing_id:
-                    vendor.canvassing_item?.canvassing?.unique_code ?? "",
-                  quo_id: "",
-                  children: [],
-                }));
+
+        if (element.pricetag_item?.data_reference != undefined) {
+          if (
+            (
+              (element.pricetag_item?.data_reference as CanvassingItem)
+                .canvassing_vendor ?? []
+            ).length == 1
+          ) {
+            childs = [
+              {
+                unique_id:
+                  (element.pricetag_item?.data_reference as CanvassingItem)
+                    .canvassing_vendor[0].unique_id || "",
+                item_name:
+                  ((element.pricetag_item?.data_reference as CanvassingItem)
+                    .canvassing_vendor ?? [])[0].vendor?.name || "N/A",
+                item_id:
+                  ((element.pricetag_item?.data_reference as CanvassingItem)
+                    .canvassing_vendor ?? [])[0].catalogue_id || "",
+                quantity:
+                  ((element.pricetag_item?.data_reference as CanvassingItem)
+                    .canvassing_vendor ?? [])[0].quantity || 0,
+                unit_name:
+                  ((element.pricetag_item?.data_reference as CanvassingItem)
+                    .canvassing_vendor ?? [])[0].unit_name || "N/A",
+                harga_quo:
+                  ((element.pricetag_item?.data_reference as CanvassingItem)
+                    .canvassing_vendor ?? [])[0].selling_price || 0,
+                harga_po: 0,
+                total:
+                  ((element.pricetag_item?.data_reference as CanvassingItem)
+                    .canvassing_vendor ?? [])[0].selling_price! *
+                  ((element.pricetag_item?.data_reference as CanvassingItem)
+                    .canvassing_vendor ?? [])[0].quantity,
+                quo_number: "",
+                canvassing_code:
+                  ((element.pricetag_item?.data_reference as CanvassingItem)
+                    .canvassing_vendor ?? [])[0].canvassing_item?.canvassing
+                    ?.unique_code ?? "",
+                canvassing_id:
+                  ((element.pricetag_item?.data_reference as CanvassingItem)
+                    .canvassing_vendor ?? [])[0].canvassing_item?.canvassing
+                    ?.unique_code ?? "",
+                quo_id: "",
+                children: [],
+              },
+            ];
+          } else {
+            childs = (
+              (element.pricetag_item?.data_reference as CanvassingItem)
+                .canvassing_vendor ?? []
+            )
+              .filter((vendor) => vendor.catalogue_id === element.catalogue_id)
+              .map((vendor) => ({
+                unique_id: vendor.unique_id || "",
+                item_name: vendor.vendor?.name || "N/A",
+                item_id: vendor.catalogue_id || "",
+                quantity: vendor.quantity || 0,
+                unit_name: vendor.unit_name || "N/A",
+                harga_quo: vendor.selling_price || 0,
+                harga_po: 0,
+                total: vendor.selling_price! * vendor.quantity,
+                quo_number: "",
+                canvassing_code:
+                  vendor.canvassing_item?.canvassing?.unique_code ?? "",
+                canvassing_id:
+                  vendor.canvassing_item?.canvassing?.unique_code ?? "",
+                quo_id: "",
+                children: [],
+              }));
+          }
+        }
 
         console.log("children", childs);
       }

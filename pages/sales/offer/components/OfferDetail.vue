@@ -824,12 +824,7 @@ watch(
           const findCatalogueExist = pricetag_item_views.value.findIndex(
             (find) => find.item_id == item.catalogue_id
           );
-          console.log(
-            "catalogue id",
-            pricetag_item_views.value[findCatalogueExist].item_id
-          );
 
-          console.log("catalogue id", item.catalogue_id);
           if (
             findCatalogueExist >= 0 &&
             pricetag_item_views.value[findCatalogueExist].reference_id ==

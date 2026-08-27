@@ -605,11 +605,17 @@
 
 
 
+
+
+
                 }}%</span
               >
               <span v-else>
                 {{
                   customMathCeil(calculateMargin((row as CanvassingItemMemoForm).total_price, (row as CanvassingItemMemoForm).total_po_price))
+
+
+
 
 
 
@@ -2125,14 +2131,21 @@ const findChilds = async (
     return [];
   } else {
     const memoChilds: CanvassingItemMemoForm[] = [];
-    const canvVendor: CanvassingVendor[] = (
-      (element.pricetag_item?.data_reference as CanvassingItem)
-        .canvassing_vendor ?? []
-    ).filter(
-      (vendor) =>
-        vendor.catalogue_id === element.catalogue_id &&
-        vendor.status == CanvassingVendorStatus.SELECTED
-    );
+    const canvVendor: CanvassingVendor[] =
+      (
+        (element.pricetag_item?.data_reference as CanvassingItem)
+          .canvassing_vendor ?? []
+      ).length == 1
+        ? (element.pricetag_item?.data_reference as CanvassingItem)
+            .canvassing_vendor
+        : (
+            (element.pricetag_item?.data_reference as CanvassingItem)
+              .canvassing_vendor ?? []
+          ).filter(
+            (vendor) =>
+              vendor.catalogue_id === element.catalogue_id &&
+              vendor.status == CanvassingVendorStatus.SELECTED
+          );
 
     let indexChild = 0;
     for (const vendor of canvVendor || []) {
@@ -2249,11 +2262,14 @@ const findChilds = async (
         canvassing_vendor_unique_id: vendor.unique_id || "",
         is_deleted: false,
         canvassing_number:
+          (element.pricetag_item?.data_reference as CanvassingItem | undefined)
+            ?.canvassing?.unique_code ||
           (
             element.pricetag_item?.pricetag?.reference_data as
               | Canvassing
               | undefined
-          )?.unique_code || "",
+          )?.unique_code ||
+          "",
         parent_index: parentIndex,
         po_number: findPoItem?.purchase_order?.unique_code || "",
         po_id: findPoItem?.order_id,
