@@ -68,6 +68,7 @@ const columnsSelected = ref<string[]>(
     ? [
         "selection",
         "unique_code",
+        "source_document",
         "vendor_name",
         "total_price",
         "date",
@@ -78,6 +79,7 @@ const columnsSelected = ref<string[]>(
     : [
         "selection",
         "unique_code",
+        "source_document",
         "vendor_name",
         "total_price",
         "date",
@@ -134,6 +136,14 @@ const columns: ColumnTable<PurchaseOrder>[] = [
         {row.unique_code}
       </NuxtLink>
     ),
+  },
+  {
+    key: "source_document",
+    title: "Ref.Number",
+    dataKey: "source_document",
+    width: 200,
+    fixed: true,
+    cellRenderer: ({ rowData: row }) => <p>{row.sourcing_document || "N/A"}</p>,
   },
   {
     key: "vendor_name",

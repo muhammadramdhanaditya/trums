@@ -459,6 +459,16 @@
           {{ ((scope.row as Inquiry).request_to as Contact | null)?.name ?? '-' }}
         </template>
       </el-table-column>
+      <el-table-column label="Nomor SO">
+        <template #default="scope">
+          {{ ((scope.row as Inquiry).reference_data as PurchaseOrder | null)?.unique_code ?? '-' }}
+        </template>
+      </el-table-column>
+      <el-table-column label="Ref.Number">
+        <template #default="scope">
+          {{ ((scope.row as Inquiry).reference_data as PurchaseOrder | null)?.sourcing_document ?? '-' }}
+        </template>
+      </el-table-column>
       <el-table-column label="Tanggal">
         <template #default="scope">
           {{ formatLocalDate(scope.row.date) }}
