@@ -1623,6 +1623,8 @@ const generatePDF = async () => {
   //   doc.text("Operation Manager", 10, finalY + 85);
   // }
 
+  // ================= PAYMENT INFORMATION =================
+
   const labelXBank = marginX;
 
   const leftX = pageWidth * 0.25;
@@ -1632,45 +1634,59 @@ const generatePDF = async () => {
   const colonXBank = bankInfoDetailX + 15;
   const valueXBank = bankInfoDetailX + 20;
 
-  // let startY = 150;
+  // Hitung posisi awal payment information
+  let valueY = finalY + 20;
 
-  let valueY = finalY + 50;
-  valueY = checkPageBreak(doc, valueY);
+  // Tinggi yang dibutuhkan oleh blok payment + signature
+  const bankCount = data.value?.data?.purchase_order_bank?.length ?? 0;
 
-  const signY = valueY;
+  const paymentHeight = bankCount * 20;
+  const signatureHeight = 50;
+  const bottomSafety = 10;
+
+  const requiredHeight = paymentHeight + signatureHeight + bottomSafety;
+
+  // Footer berada di Y = 285
+  const footerY = 285;
+
+  // Pastikan seluruh blok Payment Information + Signature
+  // muat sebelum footer.
+  if (valueY + requiredHeight > footerY - 5) {
+    doc.addPage();
+    valueY = 20;
+  }
+
+  // ================= PAYMENT INFORMATION =================
 
   doc.setFontSize(8);
 
   doc.setFont("helvetica", "bold");
+
   doc.text("Payment Information".toUpperCase(), leftX, valueY, {});
-  // let valueY = finalY + 50;
 
   doc.setFont("helvetica", "normal");
+
   (data.value?.data?.purchase_order_bank ?? []).forEach((element) => {
     valueY += 10;
-    valueY = checkPageBreak(doc, valueY);
 
     doc.text("Bank", bankInfoDetailX, valueY);
     doc.text(":", colonXBank, valueY);
     doc.text(`${element.bank?.bank_name}`, valueXBank, valueY);
 
     valueY += 5;
-    valueY = checkPageBreak(doc, valueY);
 
     doc.text("Name", bankInfoDetailX, valueY);
     doc.text(":", colonXBank, valueY);
     doc.text(`${element.bank?.account_name}`, valueXBank, valueY);
 
     valueY += 5;
-    valueY = checkPageBreak(doc, valueY);
 
     doc.text("Number", bankInfoDetailX, valueY);
     doc.text(":", colonXBank, valueY);
     doc.text(`${element.bank?.account_number}`, valueXBank, valueY);
   });
 
-  // let signY = finalY + 50;
-  // signY = checkPageBreak(doc, signY);
+  // ================= SIGNATURE =================
 
   const signWidth = 35;
   const signHeight = 20;
@@ -1693,6 +1709,7 @@ const generatePDF = async () => {
   const sourceSignCreator = data.value?.data?.people?.files?.findLast(
     (value) => value.type == AppFileType.TANDA_TANGAN
   );
+
   let signCreatorBase64 = "";
 
   if (sourceSignCreator) {
@@ -1701,7 +1718,12 @@ const generatePDF = async () => {
     );
   }
 
+  // Signature diletakkan setelah Payment Information,
+  // bukan menggunakan posisi awal Payment Information.
+  const signY = valueY + 10;
+
   doc.setFont("helvetica", "bold");
+
   doc.text(`Dibuat Oleh`.toUpperCase(), rightX, signY, {
     align: "center",
   });
@@ -1727,6 +1749,7 @@ const generatePDF = async () => {
   }
 
   doc.setFont("helvetica", "normal");
+
   if (data?.value?.data?.type === "in") {
     doc.text(data?.value?.data?.vendor_name ?? "", rightX, signY + 40, {
       align: "center",
@@ -1735,6 +1758,7 @@ const generatePDF = async () => {
     doc.text(`${data.value?.data?.people?.name || "-"},`, rightX, signY + 34, {
       align: "center",
     });
+
     doc.text(
       `${data.value?.data?.people?.departement_name || ""}`,
       rightX,
