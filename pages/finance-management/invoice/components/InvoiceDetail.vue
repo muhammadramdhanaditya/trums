@@ -1597,20 +1597,21 @@ const generatePDF = async () => {
   };
 
   let finalY = checkPageBreak(doc, (doc as any).lastAutoTable.finalY + 10);
+  if (data?.value?.data?.notes && data?.value?.data?.notes) {
+    let yNotes = finalY + 5;
+    yNotes = checkPageBreak(doc, yNotes);
+    doc.text("Notes:", 10, yNotes);
 
-  let yNotes = finalY + 5;
-  yNotes = checkPageBreak(doc, yNotes);
-  doc.text("Notes:", 10, yNotes);
+    if (data?.value?.data?.notes && data?.value?.data?.notes != "-") {
+      const splits = `${data?.value?.data?.notes}`.split("\n");
 
-  if (data?.value?.data?.notes && data?.value?.data?.notes != "-") {
-    const splits = `${data?.value?.data?.notes}`.split("\n");
-
-    let yFinal = yNotes + 5;
-    splits.forEach((value) => {
-      yFinal += 5;
-      yFinal = checkPageBreak(doc, yFinal);
-      doc.text(`\u2022 ${value ?? "-"}`, 20, yFinal);
-    });
+      let yFinal = yNotes + 5;
+      splits.forEach((value) => {
+        yFinal += 5;
+        yFinal = checkPageBreak(doc, yFinal);
+        doc.text(`\u2022 ${value ?? "-"}`, 20, yFinal);
+      });
+    }
   }
 
   // Signature
@@ -1635,7 +1636,7 @@ const generatePDF = async () => {
   const valueXBank = bankInfoDetailX + 20;
 
   // Hitung posisi awal payment information
-  let valueY = finalY + 20;
+  let valueY = finalY;
 
   // Tinggi yang dibutuhkan oleh blok payment + signature
   const bankCount = data.value?.data?.purchase_order_bank?.length ?? 0;

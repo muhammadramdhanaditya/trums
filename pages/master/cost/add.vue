@@ -40,7 +40,7 @@
             <el-form-item label="Tipe Biaya" prop="type">
               <el-radio-group v-model="form.type">
                 <el-radio label="percent">Persentase (%)</el-radio>
-                <el-radio label="fixed">Fixed Amount</el-radio>
+                <el-radio label="amount">Fixed Amount</el-radio>
               </el-radio-group>
             </el-form-item>
 
@@ -208,38 +208,7 @@ const rules = reactive<FormRules>({
   type: [
     { required: true, message: "Tipe pajak wajib dipilih", trigger: "change" },
   ],
-  default_value: [
-    { required: true, message: "Nilai default wajib diisi", trigger: "blur" },
-    {
-      validator: (rule: any, value: string, callback: any) => {
-        if (!value) {
-          callback(new Error("Nilai default wajib diisi"));
-          return;
-        }
 
-        const numValue = parseFloat(value);
-        if (isNaN(numValue)) {
-          callback(new Error("Nilai harus berupa angka"));
-          return;
-        }
-
-        if (form.value.type === "percent") {
-          if (numValue < 0 || numValue > 100) {
-            callback(new Error("Persentase harus antara 0-100"));
-            return;
-          }
-        } else {
-          if (numValue < 0) {
-            callback(new Error("Nilai fixed tidak boleh negatif"));
-            return;
-          }
-        }
-
-        callback();
-      },
-      trigger: "blur",
-    },
-  ],
   operator: [
     { required: true, message: "Operator wajib dipilih", trigger: "change" },
   ],

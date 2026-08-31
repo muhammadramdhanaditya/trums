@@ -497,7 +497,7 @@
               v-for="ref in references.filter(
             (value) =>
               (value.adjustment || value.adjustments_transaction!).operator == 'plus' &&
-              (value.adjustment || value.adjustments_transaction!).category == 'adjustment'
+              (value.adjustment || value.adjustments_transaction!).category == 'adjustment' && ((value.adjustment || value.adjustments_transaction!).name?.toLowerCase() != 'pembulatan ppn ke atas')
           )"
               :key="ref.adjustment_id"
             >
@@ -570,7 +570,7 @@
             <div
               class="flex justify-between items-center"
               v-for="ref in references.filter(
-            (value) => (value.adjustment || value.adjustments_transaction!).operator == 'minus'
+            (value) => (value.adjustment || value.adjustments_transaction!).category == 'adjustment' && (value.adjustment || value.adjustments_transaction!).operator == 'minus' && ((value.adjustment || value.adjustments_transaction!).name.toLowerCase() != 'pembulatan ppn ke atas' && (value.adjustment || value.adjustments_transaction!).name.toLowerCase() != 'pembulatan ppn ke bawah')
           )"
               :key="ref.adjustment_id"
             >
@@ -646,7 +646,79 @@
               <p class="text-gray-400">Subtotal</p>
               <p>{{ currencyWithoutSymbol(subtotal) }}</p>
             </div>
+            <div
+              class="flex justify-between items-center"
+              v-for="ref in references.filter(
+            (value) => ((value.adjustment || value.adjustments_transaction!).name.toLowerCase() == 'pembulatan ppn ke atas' || (value.adjustment || value.adjustments_transaction!).name.toLowerCase() == 'pembulatan ppn ke bawah')
+          )"
+              :key="ref.adjustment_id"
+            >
+              <p class="text-sm">
+                {{
+                  (ref.adjustment || ref.adjustments_transaction!).name ?? ""
+                }}
+              </p>
+              <p>
+                <el-input
+                  v-if="ref.type == FeeType.AMOUNT"
+                  v-model="ref.amount_nominal_display"
+                  style="max-width: 600px"
+                  class="no-border-input text-right"
+                  @input="
+                    (val) => {
+                      const parsed = parseCurrencyID(val);
+                      ref.amount = parsed;
+                      ref.amount_nominal = parsed;
+                      ref.amount_nominal_display = formatCurrencyID(parsed);
+                      ref.value = ref.amount;
+                    }
+                  "
+                  @blur="
+                    () => {
+                      ref.amount_nominal_display = formatCurrencyID(
+                        ref.amount_nominal || 0
+                      );
+                      // calculateAmount(scope.$index);
+                    }
+                  "
+                />
+                <el-input
+                  v-if="ref.type == FeeType.PERCENT"
+                  v-model="ref.amount_nominal"
+                  style="max-width: 600px"
+                  class="no-border-input text-right"
+                  @input="
+                    (val) => {
+                      // const parsed = parseCurrencyID(val);
 
+                      ref.amount = Number(val);
+                      ref.amount_nominal = displayAmount(ref, totalAmount);
+                      ref.amount_nominal_display = formatCurrencyID(
+                        ref.amount_nominal || 0
+                      );
+
+                      // ruleForm.total_amount = parsed;
+                      // ruleForm.display_total_amount = formatCurrencyID(parsed);
+                      // calculateAmount(scope.$index);
+                    }
+                  "
+                  @blur="
+                    () => {
+                      // ref.display_total_amount = formatCurrencyID(
+                      //   ruleForm.total_amount
+                      // );
+
+                      // ref.amount = Number(val);
+                      // ref.amount_nominal = displayAmount(ref, totalAmount);
+                      ref.amount_nominal_display = formatCurrencyID(
+                        ref.amount_nominal || 0
+                      );
+                      // calculateAmount(scope.$index);
+                    }
+                  "
+                />
+              </p>
+            </div>
             <div
               class="flex justify-between items-center"
               v-for="ref in references.filter(
@@ -656,21 +728,54 @@
           )"
               :key="ref.adjustment_id"
             >
-              <p class="text-gray-400">
-                {{
-                  (ref.adjustment || ref.adjustments_transaction!).name ?? ""
-                }}
-              </p>
-              <p>
-                {{
-                  currencyWithoutSymbol(showTransactionAdjustmentValue(ref), 0)
-                }}
-              </p>
+              <div class="flex flex-col w-full">
+                <div class="flex justify-between items-center">
+                  <p class="text-gray-400">
+                    {{
+                      (ref.adjustment || ref.adjustments_transaction!).name ??
+                      ""
+                    }}
+                  </p>
+                  <p>
+                    {{
+                      currencyWithoutSymbol(
+                        showTransactionAdjustmentValue(ref),
+                        0
+                      )
+                    }}
+                  </p>
+                </div>
+                <div class="flex justify-end items-center gap-1">
+                  <el-tag
+                    type="danger"
+                    size="small"
+                    @click="() => setCustomPPN(Math.floor(originalPPN()))"
+                    >↓{{
+                      currencyWithoutSymbol(Math.floor(originalPPN()), 0)
+                    }}</el-tag
+                  >
+                  <el-tag
+                    type="success"
+                    size="small"
+                    @click="() => setCustomPPN(Math.ceil(originalPPN()))"
+                    >↑{{
+                      currencyWithoutSymbol(Math.ceil(originalPPN()), 0)
+                    }}</el-tag
+                  >
+                  <el-tag
+                    type="info"
+                    size="small"
+                    @click="() => setCustomPPN(originalPPN())"
+                    >{{ currencyWithoutSymbol(originalPPN(), 0) }}</el-tag
+                  >
+                </div>
+              </div>
             </div>
+
             <el-divider />
             <div class="flex justify-between items-center gap-2">
               <p class="text-gray-400">Grand Total</p>
-              <p>{{ currencyWithoutSymbol(paidAmount || 0, 0) }}</p>
+              <p>{{ currencyWithoutSymbol(grandTotal || 0) }}</p>
             </div>
             <!-- <el-descriptions :column="1" border size="small">
               <el-descriptions-item
@@ -1519,10 +1624,13 @@ const getDPPNilaiLain = computed(() => {
   let dpp = 0;
   references.value.forEach((element) => {
     if (
-      element.adjustment?.category == "tax" &&
-      element.adjustment.name.toLowerCase() === "ppn"
+      (element.adjustment || element.adjustments_transaction)?.category ==
+        "tax" &&
+      (
+        element.adjustment || element.adjustments_transaction
+      )?.name.toLowerCase() === "ppn"
     ) {
-      if (element.type != "amount" && element.amount == 12) {
+      if (Number(element.value) == 12) {
         dpp = (subtotal.value * 11) / 12;
       } else {
         dpp = subtotal.value;
@@ -1532,6 +1640,34 @@ const getDPPNilaiLain = computed(() => {
 
   return dpp;
 });
+
+const setCustomPPN = (value: number) => {
+  const findIndex = references.value.findIndex(
+    (find) =>
+      (find.adjustment || find.adjustments_transaction)?.name?.toLowerCase() ==
+      "ppn"
+  );
+  if (findIndex >= 0) {
+    references.value[findIndex].type = FeeType.AMOUNT;
+    references.value[findIndex].amount = value;
+  }
+};
+const originalPPN = () => {
+  const findIndex = references.value.findIndex(
+    (find) =>
+      (find.adjustment || find.adjustments_transaction)?.name?.toLowerCase() ==
+      "ppn"
+  );
+  if (findIndex >= 0) {
+    console.log("original PPN", getDPPNilaiLain.value);
+    return (
+      getDPPNilaiLain.value *
+      (Number(references.value[findIndex].value || 0) / 100)
+    );
+  } else {
+    return 0;
+  }
+};
 
 const showTransactionAdjustmentValue = (
   ref: ReferenceTransactionAdjustment
@@ -1546,8 +1682,7 @@ const showTransactionAdjustmentValue = (
       if (ref.type == "amount") {
         return ref.amount;
       } else {
-        console.log("ref", ref);
-
+        console.log("ref", getDPPNilaiLain.value);
         // if (ref.amount == 11) {
         //   return subtotal.value * ref.amount;
         // } else if (ref.amount == 12) {
@@ -1572,7 +1707,10 @@ const getPlus = computed(() => {
         (value.adjustment || value.adjustments_transaction!).operator ==
           "plus" &&
         (value.adjustment || value.adjustments_transaction!).category ===
-          "adjustment"
+          "adjustment" &&
+        (
+          value.adjustment || value.adjustments_transaction!
+        ).name?.toLowerCase() !== "pembulatan ppn ke atas"
     )
     .forEach((ref) => {
       if (ref.include) {
@@ -1587,21 +1725,25 @@ const getPlus = computed(() => {
 
 const grandTotal = computed(() => {
   let total = subtotal.value || 0;
-  (references.value || [])
+  let ppn = (references.value || [])
     .filter(
       (value) =>
-        (value.adjustment || value.adjustments_transaction!).category ==
+        ((value.adjustment || value.adjustments_transaction!).category ==
           "transform" ||
-        (value.adjustment || value.adjustments_transaction!).category == "tax"
+          (value.adjustment || value.adjustments_transaction!).category ==
+            "tax") &&
+        (
+          value.adjustment || value.adjustments_transaction!
+        ).name.toLowerCase() == "ppn"
     )
-    .forEach((element) => {
-      if (element.include) {
-        total = total + 0;
-      } else {
-        total = total + showTransactionAdjustmentValue(element);
-      }
-    });
+    .filter((filter) => !filter.include)
+    .reduce((sum, element) => sum + showTransactionAdjustmentValue(element), 0);
+  console.log("ppn", ppn);
+  ppn += getRoundPPUp.value;
+  ppn -= getRoundDown.value;
+  console.log("ppn", ppn);
 
+  total += ppn;
   return total;
 });
 
@@ -1610,8 +1752,13 @@ watch(
   () => {
     let total = totalPlus.value || 0;
     (references.value || [])
-      .filter((value) => value.adjustment?.operator == "minus")
+      .filter(
+        (value) =>
+          value.adjustment?.operator == "minus" &&
+          value.adjustment?.name.toLowerCase() != "pembulatan ppn ke bawah"
+      )
       .forEach((element) => {
+        console.log("element name", element?.adjustment?.name);
         total =
           (totalPlus.value || 0) - showTransactionAdjustmentValue(element);
       });
@@ -1640,7 +1787,11 @@ const getMinus = computed(() => {
   references.value
     .filter(
       (value) =>
-        (value.adjustment || value.adjustments_transaction!).operator == "minus"
+        (value.adjustment || value.adjustments_transaction!).operator ==
+          "minus" &&
+        (
+          value.adjustment || value.adjustments_transaction!
+        ).name?.toLowerCase() != "pembulatan ppn ke bawah"
     )
     .forEach((ref) => {
       if (ref.include == true) {
@@ -1665,6 +1816,34 @@ const subtotal = computed(() => {
 
 const totalPlus = computed(() => {
   return Number(ruleForm.subtotal) + Number(getPlus.value);
+});
+const getRoundPPUp = computed(() => {
+  const roundUp = (references.value || []).find(
+    (filter) =>
+      (
+        filter.adjustment || filter.adjustments_transaction
+      )?.name?.toLowerCase() == "pembulatan ppn ke atas"
+  );
+
+  if (roundUp) {
+    return showTransactionAdjustmentValue(roundUp);
+  } else {
+    return 0;
+  }
+});
+const getRoundDown = computed(() => {
+  const roundUp = (references.value || []).find(
+    (filter) =>
+      (
+        filter.adjustment || filter.adjustments_transaction
+      )?.name?.toLowerCase() == "pembulatan ppn ke bawah"
+  );
+
+  if (roundUp) {
+    return showTransactionAdjustmentValue(roundUp);
+  } else {
+    return 0;
+  }
 });
 const totalMinus = computed(() => {
   return Number(totalPlus.value) - Number(getMinus.value);
@@ -3127,11 +3306,19 @@ const fetchDataEdit = async () => {
               formatCurrencyID(element.amount);
             references.value[indexExist].amount_nominal =
               element.amount_nominal;
+          } else {
+            references.value.push({
+              ...element,
+              amount_nominal_display: formatCurrencyID(element.amount),
+              amount_nominal: element.amount,
+            });
           }
         });
         // references.value = (invoice.reference_transaction ?? []).map(
         //   (value) => ({ ...value, adjustment: value.adjustments_transaction })
         // );
+
+        console.log("references default", references.value);
 
         if (invoice.data_reference) {
           tmp_purchase_order.value = invoice.data_reference as PurchaseOrder;
@@ -3241,20 +3428,27 @@ const fetchPPN = async () => {
 
     if (response.status.value === "success") {
       const adjustment: AdjustmentTransaction = response.data.value!.data[0];
-
-      references.value.push({
-        unique_id: "",
-        reference: ReferenceAdjustment.INVOICE,
-        reference_id: "",
-        adjustment_id: adjustment.unique_id,
-        value: null,
-        type: adjustment.type,
-        amount: 0,
-        amount_nominal: 0,
-        amount_nominal_display: "0",
-        adjustments_transaction: adjustment,
-        adjustment: adjustment,
-      });
+      const existingRef = references.value.findIndex(
+        (find) =>
+          (
+            find.adjustment || find.adjustments_transaction
+          )?.name?.toLowerCase() == "ppn"
+      );
+      if (existingRef < 0) {
+        references.value.push({
+          unique_id: "",
+          reference: ReferenceAdjustment.INVOICE,
+          reference_id: "",
+          adjustment_id: adjustment.unique_id,
+          value: null,
+          type: adjustment.type,
+          amount: 0,
+          amount_nominal: 0,
+          amount_nominal_display: "0",
+          adjustments_transaction: adjustment,
+          adjustment: adjustment,
+        });
+      }
     }
   } catch (error: any) {
     console.log("Gagal Mengambil PPN!");
@@ -3351,7 +3545,9 @@ const fetchRounding = async () => {
 
 const initialForm = async () => {
   loading.value = true;
-  await fetchPPN();
+  if (!id.value) {
+    await fetchPPN();
+  }
   await fetchDiscount();
   await fetchRounding();
 
@@ -3533,8 +3729,8 @@ const fetchDataMovement = async () => {
   }
 };
 
-onMounted(() => {
-  initialForm();
+const initialPages = async () => {
+  await initialForm();
 
   if (id.value != null && id.value != undefined) {
     fetchDataEdit();
@@ -3545,6 +3741,10 @@ onMounted(() => {
   if (movement_id.value) {
     fetchDataMovement();
   }
+};
+
+onMounted(() => {
+  initialPages();
 });
 </script>
 

@@ -54,6 +54,7 @@ export interface InventoryMovementItem {
   inventory_movement?: InventoryMovement;
   note?: string;
   invoice_items?: InvoiceItem[];
+  display_name?: string;
 }
 
 export interface InventoryMovement {
