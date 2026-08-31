@@ -195,6 +195,25 @@
           }}
         </template>
       </el-table-column>
+      <el-table-column label="Display Name" min-width="200">
+        <template #default="{ row }">
+          <div @click="startEditDisplayName(row)">
+            <el-input
+              v-if="editingDisplayNameId === row.unique_id"
+              v-model="row.display_name"
+              size="small"
+              autofocus
+              @keyup.enter="onSubmitDisplayName(row)"
+              @blur="cancelEditDisplayName(row)"
+              @click.stop
+            />
+
+            <span v-else class="cursor-pointer">
+              {{ row.display_name || "-" }}
+            </span>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column
         v-if="checkData?.category == CategoryMovement.DOCUMENTS"
         prop=""
@@ -745,5 +764,29 @@ const formatStatus = (status: string) => {
     default:
       return status;
   }
+};
+
+const editingDisplayNameId = ref<string | null>(null);
+
+const startEditDisplayName = (row: any) => {
+  editingDisplayNameId.value = row.unique_id;
+};
+
+const cancelEditDisplayName = (row: any) => {
+  if (editingDisplayNameId.value === row.unique_id) {
+    editingDisplayNameId.value = null;
+  }
+};
+
+const onSubmitDisplayName = async (row: any) => {
+  console.log("Submit Display Name:", {
+    unique_id: row.unique_id,
+    display_name: row.display_name,
+  });
+
+  // TODO:
+  // Lanjutkan API update display_name di sini
+
+  editingDisplayNameId.value = null;
 };
 </script>

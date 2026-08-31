@@ -749,6 +749,7 @@
                   <el-tag
                     type="danger"
                     size="small"
+                    class="cursor-pointer"
                     @click="() => setCustomPPN(Math.floor(originalPPN()))"
                     >↓{{
                       currencyWithoutSymbol(Math.floor(originalPPN()), 0)
@@ -757,6 +758,7 @@
                   <el-tag
                     type="success"
                     size="small"
+                    class="cursor-pointer"
                     @click="() => setCustomPPN(Math.ceil(originalPPN()))"
                     >↑{{
                       currencyWithoutSymbol(Math.ceil(originalPPN()), 0)
@@ -765,6 +767,7 @@
                   <el-tag
                     type="info"
                     size="small"
+                    class="cursor-pointer"
                     @click="() => setCustomPPN(originalPPN())"
                     >{{ currencyWithoutSymbol(originalPPN(), 0) }}</el-tag
                   >
