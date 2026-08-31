@@ -1478,32 +1478,32 @@ const generatePDF = async () => {
       }
     });
 
-  if (getDPPNilaiLain.value > 0) {
-    rowData.push([
-      {
-        content: `DPP Nilai Lain`,
-        colSpan: 5,
-        styles: {
-          halign: "right",
-          fontStyle: "bold",
-          cellWidth: 0.0,
-          lineWidth: 0.1,
-          lineColor: [0, 0, 0],
-          fillColor: [255, 255, 255],
-        },
-      },
-      {
-        content: `${currencyWithoutSymbol(getDPPNilaiLainView.value)}`,
-        styles: {
-          halign: "right",
-          cellWidth: 0.0,
-          lineWidth: 0.1,
-          lineColor: [0, 0, 0],
-          fillColor: [255, 255, 255],
-        },
-      },
-    ]);
-  }
+  // if (getDPPNilaiLain.value > 0) {
+  //   rowData.push([
+  //     {
+  //       content: `DPP Nilai Lain`,
+  //       colSpan: 5,
+  //       styles: {
+  //         halign: "right",
+  //         fontStyle: "bold",
+  //         cellWidth: 0.0,
+  //         lineWidth: 0.1,
+  //         lineColor: [0, 0, 0],
+  //         fillColor: [255, 255, 255],
+  //       },
+  //     },
+  //     {
+  //       content: `${currencyWithoutSymbol(getDPPNilaiLainView.value)}`,
+  //       styles: {
+  //         halign: "right",
+  //         cellWidth: 0.0,
+  //         lineWidth: 0.1,
+  //         lineColor: [0, 0, 0],
+  //         fillColor: [255, 255, 255],
+  //       },
+  //     },
+  //   ]);
+  // }
 
   (data?.value?.data?.reference_transaction ?? [])
     .filter(

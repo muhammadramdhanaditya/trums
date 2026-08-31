@@ -282,6 +282,7 @@ import {
   AddressMovementType,
   CategoryMovement,
   type InventoryMovement,
+  type InventoryMovementItem,
 } from "~/types/inventory_movement";
 import type { Permission } from "~/types/menu";
 import {
@@ -515,7 +516,7 @@ const generateDeliveryOrderPdf = async (unique_code: string) => {
     } else {
       itemTable.push([
         i + 1,
-        item.inventory?.catalogue?.name ?? "",
+        (item.display_name || item.inventory?.catalogue?.name) ?? "",
         item.quantity,
         item.unit_name,
         item.note ?? "",
@@ -784,8 +785,24 @@ const onSubmitDisplayName = async (row: any) => {
     display_name: row.display_name,
   });
 
-  // TODO:
-  // Lanjutkan API update display_name di sini
+  try {
+    const formData = new FormData();
+
+    formData.append("unique_id", `${row.unique_id}`);
+    formData.append("display_name", `${row.display_name}`);
+    const response = await useFetchApi<BaseResponse<InventoryMovementItem>>(
+      "/inventory-movement-item-create",
+      "update-display-name",
+      "post",
+      formData
+    );
+
+    if (response.status.value == "success") {
+      ElMessage.success(`Behasil Mengubah Display Name`);
+    }
+  } catch (e: any) {
+    ElMessage.error(e.response?.message || e);
+  }
 
   editingDisplayNameId.value = null;
 };
